@@ -1,0 +1,141 @@
+---
+title: "Chapter 6"
+author: "Christine Iyer"
+date: "March 29, 2017"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+2. Analysis of Canadian Manufacturing Workers Work-Hours: The time series plot in Figure 6.10 describes the average annual number of weekly hours spent by Canadian manufacturing workers. The data is available in CanadianWorkHours.xls.
+
+```{r}
+library(forecast)
+setwd("/Users/Chris Iyer/Documents/Assignment5Predictive/")
+canadian <- read.csv("CanadianWorkHours.csv", header = TRUE, stringsAsFactors = FALSE)
+head(canadian)
+#convert to a time series
+canadian.ts <- ts(canadian$Hours.per.week, start=c(1966, 1), frequency=1)
+```
+
+```{r}
+#partition the data
+rangeCA <- range(canadian.ts)
+rangeCA
+#35 years. 
+length(canadian.ts)
+validLength <- 5
+trainLength <- length(canadian.ts) - validLength
+windowTrain <- window(canadian.ts, start = c(1966,1), end = c(1966, trainLength))
+windowValid <- window(canadian.ts, start = c(1966, trainLength + 1), end =  c(1966, trainLength + validLength))
+#verify
+length(windowValid)
+length(windowTrain)
+```
+
+
+**Which one model of the following regression-based models would fit the series best?**
+
+In order to determine which regression model best fits the series, we first plot the time series. 
+
+```{r}
+yrange = range(canadian.ts)
+yrange
+# Set up the plot
+plot(c(1966, 2000), yrange, type="n", xlab="Year",  ylab="canadian Revenue Passenger Miles (millions)", bty="l", xaxt="n", yaxt="n")
+
+# Add the time series canadian
+lines(canadian.ts, bty="l")
+
+# Add the x-axis
+axis(1, at=seq(1966,2000,1), labels=format(seq(1966,2000,1)))
+
+# Add the y-axis
+axis(2, at=seq(30,40, 1), labels=format(seq(30,40, 1)), las=2)
+```
+
+
+. Linear trend model (training period)
+
+
+
+```{r}
+linearTrain <- tslm(windowTrain ~ trend)
+summary(linearTrain)
+plot(c(1966, 2000), yrange, type="n", xlab="Year",  ylab="canadian Revenue Passenger Miles (millions)", bty="l", xaxt="n", yaxt="n")
+
+
+# Add the x-axis
+axis(1, at=seq(1966,2000,1), labels=format(seq(1966,2000,1)))
+
+# Add the y-axis
+axis(2, at=seq(30,40, 1), labels=format(seq(30,40, 1)), las=2)
+
+# Add the time series canadian
+lines(canadian.ts, bty="l")
+
+lines(linearTrain$fitted.values, col = "red")
+# Add a legend
+legend(1990,37, c("Actual", "Linear, R-sq = 0.76"), lty=c(1,1), col=c("black", "red"), bty="n")
+
+#legend(1990,37, c("Actual", "Linear", "Linear+Season", "Quadratic", "Quadratic+Season"), lty=c(1,1,1,1,1), col=c("black", "red", "blue","orange","green"), bty="n")
+
+```
+
+
+. Linear trend model with seasonality 
+
+```{r}
+# Linear trend with seasonality
+trainLinearSeason <- tslm(windowTrain ~ trend + season)
+summary(airLinearSeason)
+```
+
+
+. Quadratic trend model 
+
+. Quadratic trend model with seasonality
+
+4. Forecasting Department Store Sales: The time series plot shown in Figure 6.12 describes actual quarterly sales for a department store over a 6-year period. The data is available in DepartmentStoreSales.xls.
+
+(a) The forecaster decided that there is an exponential trend in the series. In order to fit a regression-based model that accounts for this trend, which of the following operations must be performed (either manually or by a function in R)? 
+
+. Take a logarithm of the Quarter index 
+
+. Take a logarithm of sales
+
+. Take an exponent of sales . Take an exponent of Quarter index 
+
+(b) Fit a regression model with an exponential trend and seasonality, using only the first 20 quarters as the training period (remember to first partition the series into training and validation periods). 
+
+(c) A partial output is shown in Table 6.7. From the output, after adjusting for trend, are Q2 average sales higher, lower, or approximately equal to the average Q1 sales?
+
+(d) Use this model to forecast sales in quarters 21 and 22. 
+(e) The plots shown in Figure 6.13 describe the fit (top) and forecast errors (bottom) from this regression model. i. Recreate these plots. ii. Based on these plots, what can you say about your forecasts for quarters Q21 and Q22? Are they likely to overforecast, under-forecast, or be reasonably close to the real sales values? 
+
+(f) Looking at the residual plot, which of the following statements appear true? . Seasonality is not captured well. . The regression model fits the data well. . The trend in the data is not captured well by the model.. The trend in the data is not captured well by the model. 
+
+(g) Which of the following solutions is adequate and a parsimonious solution for improving model fit?
+
+. Fit a quadratic trend model to the residuals (with Quarter and Quarter2.) 
+
+. Fit a quadratic trend model to Sales (with Quarter and Quarter2.)
+
+5. Souvenir Sales: The file SouvenirSales.xls contains monthly sales for a souvenir shop at a beach resort town in Queensland, Australia, between 1995 and 2001. 9 9 Source: R. J. Hyndman Time Series Data Library, http://data.is/TSDLdemo; accessed on Mar 28, 2016 Beach Resort. (Image by quyenlan/ FreeDigitalPhotos.net) Back in 2001, the store wanted to use the data to forecast sales for the next 12 months (year 2002). They hired an analyst to generate forecasts. The analyst first partitioned the data into training and validation periods, with the validation set containing the last 12 months of data (year 2001). She then fit a regression model to sales, using the training period. 
+
+(a) Based on the two time plots in Figure 6.14, which predictors should be included in the regression model? What is the total number of predictors in the model? 
+
+(b) Run a regression model with Sales (in Australian dollars) as the output variable and with a linear trend and monthly predictors. Remember to fit only the training period. Call this model A.
+
+i. Examine the coefficients: Which month tends to have the highest average sales during the year? Why is this reasonable? 
+
+ii. What does the trend coefficient of model A mean? 
+
+(c) Run a regression model with log(Sales) as the output variable and with a linear trend and monthly predictors. Remember to fit only the training period. Call this model B. i. Fitting a model to log(Sales) with a linear trend is equivalent to fitting a model to Sales (in dollars) with what type of trend? ii. What does the estimated trend coefficient of model B mean? iii. Use this model to forecast the sales in February 2002. 
+
+(d) Compare the two regression models (A and B) in terms of forecast performance. Which model is preferable for forecasting? Mention at least two reasons based on the information in the outputs. 
+
+(e) How would you model this data differently if the goal was understanding the different components of sales in the souvenir shop between 1995 and 2001? Mention two differences.
+
