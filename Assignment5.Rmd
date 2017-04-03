@@ -28,15 +28,15 @@ library(pander)
 
 setwd("/Users/Chris Iyer/Documents/Assignment5Predictive/")
 canadian <- read.csv("CanadianWorkHours.csv", header = TRUE, stringsAsFactors = FALSE)
-head(canadian)
+#head(canadian)
 #convert to a time series
 canadian.ts <- ts(canadian$Hours.per.week, start=c(1966, 1), frequency=1)
 ```
 
 ```{r}
 #partition the data
-rangeCA <- range(canadian.ts)
-rangeCA
+#rangeCA <- range(canadian.ts)
+#rangeCA
 #35 years. 
 length(canadian.ts)
 validLength <- 5
@@ -44,16 +44,17 @@ trainLength <- length(canadian.ts) - validLength
 windowTrain <- window(canadian.ts, start = c(1966,1), end = c(1966, trainLength))
 windowValid <- window(canadian.ts, start = c(1966, trainLength + 1), end =  c(1966, trainLength + validLength))
 #verify
-length(windowValid)
-length(windowTrain)
+#length(windowValid)
+#length(windowTrain)
 ```
 
 
 **Which one model of the following regression-based models would fit the series best?**
 
-In order to determine which regression model best fits the series, we first plot the time series. 
+In order to determine which regression model best fits the series, we first plot the time series, run each model, and pot the fitted models.  
 
-```{r}
+```{r, message=FALSE, warning=FALSE, include=FALSE}
+#raw data plotted
 yrange = range(canadian.ts)
 yrange
 # Set up the plot
@@ -73,26 +74,25 @@ legend(1986,37, c("Actual"), lty=c(1), col=c("black"), bty="n")
 
 **. Linear trend model:** This linear trend model does not capture the complexity of this entire data series. The model expresses the downward trend but it misses the upward trend that starts in the late 1980s. 
 
-
 ```{r}
 linearTrain <- tslm(canadian.ts ~ trend)
 summary(linearTrain)
+```
+
+
+
+```{r, include=FALSE}
+#plot ts and linear trend
 plot(c(1966, 2000), yrange, type="n", xlab="Year",  ylab = "Average Weekly Hours Worked",  main = "Average Weekly Hours Worked in Canadian Manufacturing", bty="l", xaxt="n", yaxt="n")
-
-
 # Add the x-axis
 axis(1, at=seq(1966,2000,1), labels=format(seq(1966,2000,1)))
-
 # Add the y-axis
 axis(2, at=seq(30,40, 1), labels=format(seq(30,40, 1)), las=2)
-
 # Add the time series canadian
 lines(canadian.ts, bty="l")
-
 lines(linearTrain$fitted.values, col = "red")
 # Add a legend
 legend(1995,37, c("Actual Data", "Linear Trend Model"), lty=c(1,1), col=c("black", "red"), bty="n")
-
 legend(1995,37, c("Actual", "Linear Trend"), lty=c(1,1,1,1,1), col=c("black", "red"), bty="n")
 
 ```
@@ -102,35 +102,33 @@ legend(1995,37, c("Actual", "Linear Trend"), lty=c(1,1,1,1,1), col=c("black", "r
 
 **. Quadratic trend model:** This model does fit the Canadian manufacturing work hours data better than the linear model anothough both have a roughly equal R-sq. However, the quadratic trend model is able to capture the downward trend and then the upward trend which starts to emerge in the late 1980s. 
 
-
 ```{r}
 # Quadratic trend - there are two ways to do this
 # 1. Like the book
 canadaQuad1 <- tslm(canadian.ts ~ trend + I(trend^2))
 summary(canadaQuad1)
-
-plot(c(1966, 2000), yrange, type="n", xlab="Year",  ylab="canadian Revenue Passenger Miles (millions)", bty="l", xaxt="n", yaxt="n")
-
-
-# Add the x-axis
-axis(1, at=seq(1966,2000,1), labels=format(seq(1966,2000,1)))
-
-# Add the y-axis
-axis(2, at=seq(30,40, 1), labels=format(seq(30,40, 1)), las=2)
-
-# Add the time series canadian
-lines(canadian.ts, bty="l")
-
-lines(linearTrain$fitted.values, col = "blue", lwd = 2)
-lines(canadaQuad1$fitted.values, col = "green", lwd = 2)
-# Add a legend
-legend(1988,37, c("Actual", "Linear, R-sq = 0.76", "Quad, R-sq = 0.77"), lty=c(1,1, 1), col=c("black", "blue", "green"), bty="n", lwd = c(1,2,2))
 #Second method
 # 2. Another way - be sure to use raw=TRUE
-canadaQuad2 <- tslm(windowTrain ~ poly(trend, 2, raw=TRUE))
-summary(canadaQuad2)
+#canadaQuad2 <- tslm(canadian.ts ~ poly(trend, 2, raw=TRUE))
+#summary(canadaQuad2)
 ```
 
+
+```{r}
+# Quadratic trend - there are two ways to do this
+# 1. Like the book
+plot(c(1966, 2000), yrange, type="n", xlab="Year",  ylab="canadian Revenue Passenger Miles (millions)", bty="l", xaxt="n", yaxt="n")
+# Add the x-axis
+axis(1, at=seq(1966,2000,1), labels=format(seq(1966,2000,1)))
+# Add the y-axis
+axis(2, at=seq(30,40, 1), labels=format(seq(30,40, 1)), las=2)
+# Add the time series canadian
+lines(canadian.ts, bty="l")
+lines(linearTrain$fitted.values, col = "green", lwd = 2)
+lines(canadaQuad1$fitted.values, col = "blue", lwd = 2)
+# Add a legend
+legend(1986,37, c("Actual", "Linear, R-sq = 0.0.60", "Quad, R-sq = 0.75"), lty=c(1,1, 1), col=c("black", "green", "blue"), bty="n", lwd = c(1,2,2))
+```
 
 
 **. Quadratic trend model with seasonality:**
@@ -148,64 +146,66 @@ DeptSales$Yr_Qtr <- c("Year 1 Q-1", "Year 1 Q-2", "Year 1 Q-3", "Year 1 Q-4", "Y
 
 DeptSales <- DeptSales %>% select(Yr_Qtr, Sales)
 DeptSales.ts <- ts(DeptSales$Sales, start = c(1,1), frequency = 4)
-length(DeptSales.ts)
-SvalidLength <- 4
-StrainLength <- length(DeptSales.ts) - SvalidLength
-
-#windows for analysis
-sWindowTrain <- window(DeptSales.ts, end = c(1, StrainLength))
-sWindowValid <- window(DeptSales.ts, start = c(1, StrainLength + 1))
 ```
 
 ```{r}
-
+library(Hmisc)
+yrange <- range(DeptSales.ts)
+# Set up the plot
+plot(c(1, 7), yrange, type="n", xlab="Year",  ylab="Dept Store Sales (thousands)", bty="l", xaxt="n", yaxt="n",  main = "Quarterly Dept Store Sales ")
+# Add the time series canadian
+lines(DeptSales.ts, type = "o")
+# Add the x-axis
+axis(1, at=seq(1,7,1), labels=format(seq(1,7,1)), minor.tick(nx = 4))
+# Add the y-axis
+axis(2, at=seq(40000, 105000, 10000), labels=format(seq(40, 105, 10)), las=2)
 ```
 
 
 **(a) The forecaster decided that there is an exponential trend in the series. In order to fit a regression-based model that accounts for this trend, which of the following operations must be performed (either manually or by a function in R)?** 
 
-. Take a logarithm of the Quarter index **No**
+. Take a logarithm of the Quarter index: **No**
 
-. Take a logarithm of sales **Yes** In R this is completed by setting lambda = 0 in the tslm function. 
+. Take a logarithm of sales: **Yes** In R this is completed by setting lambda = 0 in the tslm function. 
 
-. Take an exponent of sales **No**
+. Take an exponent of sales: **No**
 
-. Take an exponent of Quarter index **No**
+. Take an exponent of Quarter index: **No**
 
 **(b) Fit a regression model with an exponential trend and seasonality, using only the first 20 quarters as the training period (remember to first partition the series into training and validation periods).** 
 
 
+###Regresion model with an exponential trend and seasonality.
 
 ```{r}
+SvalidLength <- 4
+StrainLength <- length(DeptSales.ts) - SvalidLength
+#windows for analysis
+sWindowTrain <- window(DeptSales.ts, end = c(1, StrainLength))
+sWindowValid <- window(DeptSales.ts, start = c(1, StrainLength + 1))
 #salesExpoSeason <- tslm(DeptSales.ts ~ trend + season, lambda = 0)
 salesExpoSeason <- tslm(sWindowTrain ~ trend + season, lambda = 0)
 #salesForecast <- forecast(salesExpoSeason, h = 4)
 summary(salesExpoSeason)
-pander(summary(salesExpoSeason))
-
-ggseasonplot(DeptSales.ts)
+#ggseasonplot(DeptSales.ts)
 ```
 
-```{r}
+```{r, eval=FALSE, include=FALSE}
 yrange <- range(sWindowTrain)
 # Set up the plot
-plot(c(1, 7), yrange, type="n", xlab="Quarter",  ylab="Dept Store Sales (thousands)", bty="l", xaxt="n", yaxt="n",  main = "Exponential Model with Seasonality \nDept Store Sales ")
-
-# Add the time series canadian
-
-#lines(DeptSales.ts, bty="l", type = "l")
+plot(c(1, 7), yrange, type="n", xlab="Year",  ylab="Dept Store Sales (thousands)", bty="l", xaxt="n", yaxt="n",  main = "Exponential Trend  with Seasonality Model \nfit to Dept Store Sales ")
+# Add the time series canadian training set
 lines(sWindowTrain, bty="l", type = "l")
+#add exponential fit
 lines(salesExpoSeason$fitted.values, bty = "l", col = "blue")
 #lines(salesForecast$mean, col = "blue", lty = 2)
 # Add the x-axis
-axis(1, at=seq(1,7,1), labels=format(seq(1,7,1)))
-
+axis(1, at=seq(1,7,1), labels=format(seq(1,7,1)), minor.tick(nx = 4))
 # Add the y-axis
 axis(2, at=seq(40000, 105000, 10000), labels=format(seq(40, 105, 10)), las=2)
-
 legend(1, 90000, c("Dept Store Sales", "Exp Trend with Seasonality Fit"
                    #, "Expo Forecast"
-                   ), col = c("black", "blue", "blue"), lwd = c(2,2,2),  bty = "n", lty = c(1,1,2))
+                   ), col = c("black", "blue"), lwd = c(1,1),  bty = "n", lty = c(1,1))
 #accuracy(salesForecast, sWindowValid)
 
 
@@ -224,8 +224,6 @@ As shown on the Dept Store sales regression summary with exponential trend and s
 ```{r}
 #forecast 21 and 22
 forecastSalesExpoSeason <- forecast(salesExpoSeason, h = 2)
-forecastSalesExpoSeason
-
 ```
 
 **(e) The plots shown in Figure 6.13 describe the fit (top) and forecast errors (bottom) from this regression model. i. Recreate these plots.**
@@ -237,32 +235,74 @@ forecastSalesExpoSeason
 #Generic Plot
 #yrange <- range(sWindowTrain)
 yrange <- range(sWindowTrain)
-plot(c(1,7), yrange, type = "n", xlab = "Year", ylab = "Dept Store Sales (thousands)", bty = "l", xaxt = "n", yaxt = "n", lwd = 2, main = "Regression with Exponential Trend and Seasonality \nDept Store Sales")
+plot(c(1,6), yrange, type = "n", xlab = "Year", ylab = "Dept Store Sales (thousands)", bty = "l", xaxt = "n", yaxt = "n", lwd = 2, main = "Regression with Exponential Trend and Seasonality \nDept Store Sales")
 
-axis(1, at = seq(1, 20, 2), labels = format(seq(1, 20, 2)))
+axis(1, at = seq(1, 6, 1), labels = format(seq(1, 6, 1)), minor.tick(nx = 4))
 axis(2, at = seq(40000, 105000, 10000), labels = format(seq(40, 105, 10)), las = 2)
 
 #lines(sWindowTrain, bty = "l", lwd = 2, type = "o")
 lines(sWindowTrain, bty = "l", lwd = 2, type = "o")
 lines(salesExpoSeason$fitted.values, col="blue", lwd=2)
 #lines(forecastSalesExpoSeason$mean, col = 2, lty = 2, lwd = 2)
-
 #lines(maForecasts, lwd=2, col="red", lty=2)
-
 legend(1, 105000, c("Dept Store Sales", "Expo"), lty = c(1,2,2), col = c("black", "blue"), lwd = c(2,2),  bty = "n")
-
-plot(salesExpoSeason$residuals, type = "o")
+plot(sWindowTrain - salesExpoSeason$fitted.values, type="o", bty="l", xlab = "Year", ylab = "Residuals", main = "Dept Store Sales Residuals in Training Period \nExponential Trend with Seasonality Fit")
 abline(h = 0)
 #another way to plot residuals from the multiplicative trend and seasonality model
-plot(sWindowTrain - salesExpoSeason$fitted.values, type="o", bty="l")
-abline(h = 0)
-
+# plot(salesExpoSeason$residuals, type = "o")
+# abline(h = 0)
 ```
 
 **ii. Based on these plots, what can you say about your forecasts for quarters Q21 and Q22? Are they likely to overforecast, under-forecast, or be reasonably close to the real sales values?**
 
-Years 2, 3, and 4 were over forecasted. 
+Years 2-4 were over forecasted. However, as we see above, Q-2-4 in Year 5 have been underforecasted. I would expect Q-1 and Q-2 in Year 6 will be the same, i.e., underforecasted. A plot of the residuals from Year 6 (see below) confirms that there is an underforecasting that grows. Finally, the raw data from the validation is plotted against the forecast for the same period to look at the accuracy in another way. 
 
+
+
+
+```{r, include=FALSE}
+#forecast 21-24
+forecastSalesExpoSeason4 <- forecast(salesExpoSeason, h = 4)
+forecastSalesExpoSeason4
+forecastSalesExpoSeason4$mean
+sWindowValid
+```
+
+
+```{r}
+
+plot(sWindowValid - forecastSalesExpoSeason4$mean, type="o", bty="l", xlab = "Year 6", ylab = "Residuals", main = "Dept Store Sales Residuals from Validation Period \nExponential Trend with Seasonality Fit", xaxt = "n", ylim = c(-1000, 9000))
+axis(1, at = seq(6, 6+3/4, 1/4), labels = c("Q-1", "Q-2", "Q-3", "Q-4"))
+abline(h = 0, lwd = 3)
+
+yrange <- range(sWindowValid)
+y.low <- c(58793.71/1000,  60951.51/1000,  70920.09/1000,  93788.66/1000)
+y.high <- c(60800/1000,  64900/1000,  76997/1000, 103337/1000)
+polygon(c(y.high, y.low),
+     col = "grey30", border = NA)
+
+plot(c(6,7), yrange, type = "n", xlab = "Year", ylab = "Dept Store Sales (thousands)", bty = "l", xaxt = "n", yaxt = "n", lwd = 2, main = "Regression with Exponential Trend and Seasonality \nValidation Period Dept Store Sales", ylim = c(50000, 105000))
+
+axis(1, at = seq(6, 6+3/4, 1/4), labels = c("Q-1", "Q-2", "Q-3", "Q-4"))
+axis(2, at=seq(40000, 105000, 10000), labels=format(seq(40, 105, 10)), las=2)
+#lines(sWindowTrain, bty = "l", lwd = 2, type = "o")
+lines(sWindowValid, bty = "l", lwd = 2, type = "o")
+lines(forecastSalesExpoSeason4$mean, col="blue", lwd=2, type = "o")
+polygon(y.high, y.low,
+     col = "grey30", border = NA)
+#lines(forecastSalesExpoSeason$mean, col = 2, lty = 2, lwd = 2)
+#lines(maForecasts, lwd=2, col="red", lty=2)
+legend(6.5, 75000, c("Dept Store Sales", "Forecasted Values"), lty = c(1,1), col = c("black", "blue"), lwd = c(2,2),  bty = "n")
+```
+
+The accuracy of the two windows is shown below. 
+
+```{r}
+accuracyTrain <- accuracy(sWindowTrain, salesExpoSeason$fitted.values)
+accuracyValid <- accuracy(sWindowValid, forecastSalesExpoSeason4$mean)
+pander(pandoc.table(accuracyTrain, caption = "Error: Dept Store Sales Test Set (Years 1-5)"))
+pander(pandoc.table(accuracyValid, caption = "Error: Dept Store Sales Validation Set (Year 6)"))
+```
 
 
 **(f) Looking at the residual plot, which of the following statements appear true?** 
@@ -273,12 +313,9 @@ Years 2, 3, and 4 were over forecasted.
 
 . The trend in the data is not captured well by the model. False
 
-
 **(g) Which of the following solutions is adequate and a parsimonious solution for improving model fit?**
 
-```{r}
 
-```
 
 
 . Fit a quadratic trend model to the residuals (with Quarter and Quarter2.) 
@@ -286,6 +323,7 @@ Years 2, 3, and 4 were over forecasted.
 . Fit a quadratic trend model to Sales (with Quarter and Quarter2.)
 
 **5. Souvenir Sales: The file SouvenirSales.xls contains monthly sales for a souvenir shop at a beach resort town in Queensland, Australia, between 1995 and 2001. 9 9 Source: R. J. Hyndman Time Series Data Library, http://data.is/TSDLdemo; accessed on Mar 28, 2016 Beach Resort. (Image by quyenlan/ FreeDigitalPhotos.net) Back in 2001, the store wanted to use the data to forecast sales for the next 12 months (year 2002). They hired an analyst to generate forecasts. The analyst first partitioned the data into training and validation periods, with the validation set containing the last 12 months of data (year 2001). She then fit a regression model to sales, using the training period. **
+
 
 ```{r}
 setwd("/Users/Chris Iyer/Documents/Assignment5Predictive/")
@@ -299,41 +337,33 @@ souvenirValid <- window(souvenir.ts, start=c(1995,trainLength+1))
 
 ```
 
-
 **(a) Based on the two time plots in Figure 6.14, which predictors should be included in the regression model? What is the total number of predictors in the model? **
 
-
+The plots are reproduced below. 
 
 ```{r}
 plot(souvenir.ts, type = "n", xaxt = "n", yaxt = "n", xlab = "Year", ylab = "Sales (thousands)", main = "Souvenir Sales")
-lines(souvenir.ts, col = "black", lwd = 2)
+lines(souvenir.ts, col = "grey48", lwd = 2, lty = 1, pch = 18, type = "o")
 # Add the x-axis
 axis(1, at=seq(1995,2002,1), labels=format(seq(1995,2002,1)))
 axis(2, at = seq(0, 110000, 20000), labels = format(seq(0, 110, 20)), las = 2)
-plot(log(souvenir.ts),
-     #ylim = c(1000, 10^6),
-     
-     type = "n", 
-     #xaxt = "n", 
-     yaxt = "n", 
-     xlab = "Year", ylab = "Souvenir Sales", main = "Log Souvenir Sales")
-lines(log(souvenir.ts), col = "black", lwd = 2)
-#lines(souvenirExpo$fitted.values, col = "blue", lwd = 1)
+
+
+
+```
+
+```{r}
+
+plot(log(souvenir.ts), type = "n", xaxt = "n", xlab = "Year", ylab = "Sales (thousands)", main = "Log Souvenir Sales")
+
+lines(log(souvenir.ts), col = "grey48", lwd = 2, lty = 1, pch = 18, type = "o")
+
 # Add the x-axis
 axis(1, at=seq(1995,2002,1), labels=format(seq(1995,2002,1)))
 # Add the y-axis
-axis(2, at=seq(1000,1000000, by = exp(10)), labels=format(seq(1000,1000000, by = exp(10))), las=2)
-
-# Add the y-axis
-# axis(2, at=seq(0,120000, 20000), labels=format(seq(0,120000, 20000)), las=2)
-# 
-# 
-legend(1995,100000, c("Actual"),
-#                       #, "Expo Trend MAPE = ", "Expo Forecast MAPE = "
-#                       ), lty=c(1,1, 2), lwd = 2, col=c("black", "blue", "blue"), 
-bty="n")
-
+axis(2, at = seq(0, 110000, 20000), labels = format(seq(0, 110, 20)), las = 2)
 ```
+
 
 Based on the 2 charts, which are representations of those shows in the textbook, there are two important predictors, trend and seasonality. 
 
