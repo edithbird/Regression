@@ -1,0 +1,297 @@
+---
+title: "PredictiveAssignment5"
+author: "Christine Iyer"
+date: "April 3, 2017"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+	echo = TRUE,
+	message = FALSE,
+	warning = FALSE
+)
+```
+
+
+```{r}
+library(forecast)
+library(knitr)
+library(dplyr)
+library(pander)
+library(Hmisc)
+```
+
+
+1. Analysis of Canadian Manufacturing Workers Work-Hours: The time series plot in Figure 7.9 describes the average annual number of weekly hours spent by Canadian manufacturing workers. The data is available in CanadianWorkHours.xls.
+
+```{r}
+setwd("/Users/Chris Iyer/Documents/Assignment5Predictive/")
+canadian <- read.csv("CanadianWorkHours.csv", header = TRUE, stringsAsFactors = FALSE)
+#head(canadian)
+names(canadian)
+names(canadian)[2] <- "Hours"
+head(canadian)
+#convert to a time series
+canadian.ts <- ts(canadian$Hours, start=c(1966, 1), frequency=1)
+```
+
+```{r}
+#partition the data
+rangeCA <- range(canadian.ts)
+#rangeCA
+#35 years. 
+length(canadian.ts)
+validLength <- 5
+trainLength <- length(canadian.ts) - validLength
+windowTrain <- window(canadian.ts, start = c(1966,1), end = c(1966, trainLength))
+windowValid <- window(canadian.ts, start = c(1966, trainLength + 1), end =  c(1966, trainLength + validLength))
+#verify
+#length(windowValid)
+#length(windowTrain)
+```
+
+
+```{r, echo=TRUE, message=FALSE, warning=FALSE}
+#raw data plotted
+yrange = range(canadian.ts)
+yrange
+# Set up the plot
+plot(c(1966, 2000), yrange, type="n", xlab="Year",  ylab = "Average Weekly Hours Worked", main = "Average Weekly Hours Worked in Canadian Manufacturing", bty="l", xaxt="n", yaxt="n")
+
+# Add the time series canadian
+lines(canadian.ts, bty="n", col = "black")
+
+# Add the x-axis
+axis(1, at=seq(1966,2000,1), labels=format(seq(1966,2000,1)))
+
+# Add the y-axis
+axis(2, at=seq(30,40, 1), labels=format(seq(30,40, 1)), las=2)
+legend(1986,37, c("Actual"), lty=c(1), col=c("black"), bty="n")
+```
+
+
+```{r}
+linearTrain <- tslm(canadian.ts ~ trend)
+summary(linearTrain)
+```
+
+
+**This shows the linear trend plotted on the generic plot**
+
+```{r, echo=TRUE}
+#plot ts and linear trend
+plot(c(1966, 2000), yrange, type="n", xlab="Year",  ylab = "Average Weekly Hours Worked",  main = "Average Weekly Hours Worked in Canadian Manufacturing", bty="l", xaxt="n", yaxt="n")
+# Add the x-axis
+axis(1, at=seq(1966,2000,1), labels=format(seq(1966,2000,1)))
+# Add the y-axis
+axis(2, at=seq(30,40, 0.5), labels=format(seq(30,40, 0.5)), las=2)
+# Add the time series canadian
+lines(canadian.ts, bty="l")
+lines(linearTrain$fitted.values, col = "red")
+# Add a legend
+legend(1981,37.5, c("Actual Data", "Linear Trend Model"), lty=c(1,1), col=c("black", "red"), bty="n")
+
+```
+
+
+
+(a) If we computed the autocorrelation of this series, would the lag-1 autocorrelation exhibit negative, positive, or no autocorrelation? How can you see this from the plot? 
+
+(b) Compute the autocorrelation and produce an ACF plot. Verify your answer to the previous question.
+
+
+
+2. Forecasting Wal-Mart Stock: Figure 7.10 shows a time plot of Wal-Mart daily closing prices between February 2001 and February 2002. The data is available at finance.yahoo.com and in WalMartStock.xls. 21 The ACF plots of these daily closing prices and its lag-1 differenced series are in Figure 7.11. Table 7.4 shows the output from fitting an AR(1) model to the series of closing prices and to the series of differences. Use all the information to answer the following questions.
+
+```{r}
+setwd("/Users/Chris Iyer/Documents/Assignment5Predictive/")
+walMart <- read.csv("WalMartStock.csv", header = TRUE, stringsAsFactors = FALSE)
+```
+
+
+(a) Create a time plot of the differenced series. 
+(b) Which of the following is/are relevant for testing whether this stock is a random walk? 
+. The autocorrelations of the closing price series 
+. The AR(1) slope coefficient for the closing price series 
+. The AR(1) constant coefficient for the closing price series 
+. The autocorrelations of the differenced series 
+. The AR(1) slope coefficient for the differenced series 
+. The AR(1) constant coefficient for the differenced series 
+
+(c) Recreate the AR(1) model output for the Close price series shown in the left of Table 7.4. Does the AR model indicate that this is a random walk? Explain how you reached your conclusion.
+(d) What are the implications of finding that a time series is a random walk? Choose the correct statement(s) below. 
+. It is impossible to obtain useful forecasts of the series. 
+. The series is random. 
+. The changes in the series from one period to the other are random.
+
+
+
+3. Souvenir Sales: The file SouvenirSales.xls contains monthly sales for a souvenir shop at a beach resort town in Queensland, Australia, between 1995 and 2001. 
+
+Back in 2001, the store wanted to use the data to forecast sales for the next 12 months (year 2002). They hired an analyst to generate forecasts. The analyst first partitioned the data into training and validation periods, with the validation set containing the last 12 months of data (year 2001). She then fit a regression model to sales, using the training period.
+
+
+(a)	Run a regression model with log(Sales) as the output variable and with a linear trend and monthly predictors. Remember to fit only the training period. Use this model to forecast the sales in February 2002. 
+
+(b) Create an ACF plot until lag-15 for the forecast errors. Now fit an AR model with lag-2 [ARIMA(2, 0, 0)] to the forecast errors. 
+
+i.	Examining the ACF plot and the estimated coefficients of the AR(2) model (and their statistical significance), what can we learn about the regression forecasts? 
+
+ii.	Use the autocorrelation information to compute a forecast for January 2002, using the regression model and the AR(2) model above. *Please note, that for  #3b, part ii, please forecast for January 2001 (instead of 2002). I think the book is very unclear and inconsistent for this question. By asking for 2002, I think they wanted you to rejoin the partitions, re-estimate, etc. But they never say that.  So, instead, please forecast for January 2001, the first month of the validation period.
+
+
+
+
+```{r}
+setwd("/Users/Chris Iyer/Documents/Assignment5Predictive/")
+souvenirSales<- read.csv("SouvenirSales.csv")
+souvenir.ts <- ts(souvenirSales$Sales, start = c(1995,1), frequency = 12)
+validLength <- 12
+trainLength <- length(souvenir.ts) - validLength
+
+souvenirTrain <- window(souvenir.ts, end=c(1995, trainLength))
+souvenirValid <- window(souvenir.ts, start=c(1995,trainLength+1))
+
+```
+
+
+**Souvenir Plot**
+
+```{r}
+plot(souvenir.ts, type = "n", xaxt = "n", yaxt = "n", xlab = "Year", ylab = "Sales (thousands)", main = "Souvenir Sales")
+lines(souvenir.ts, col = "grey48", lwd = 2, lty = 1, pch = 18, type = "o")
+# Add the x-axis
+axis(1, at=seq(1995,2002,1), labels=format(seq(1995,2002,1)))
+axis(2, at = seq(0, 110000, 20000), labels = format(seq(0, 110, 20)), las = 2)
+```
+
+**Log(souvenir) plot**
+
+```{r}
+
+plot(log(souvenir.ts), type = "n", xaxt = "n", yaxt = "n", xlab = "Year", ylab = "Souvenir Sales (thousands)", main = "Log Souvenir Sales")
+
+lines(log(souvenir.ts), col = "grey48", lwd = 2, lty = 1, pch = 18, type = "o")
+# Add the x-axis
+axis(1, at=seq(1995,2002,1), labels=format(seq(1995,2002,1)))
+# Add the y-axis
+axis(2, at = seq(7, 11, 1), labels = format(round(exp(seq(7, 11, 1)), digits = 0), las = 2))
+range(log(souvenir.ts))
+```
+
+**Log Regression trend and seasonality**
+
+```{r}
+modelC <- tslm(souvenirTrain ~ trend + season, lambda = 0)
+SumC <- summary(modelC)
+FCC <- forecast(modelC, h = 2)
+accuracy(FCC$mean, souvenirValid[1:2])
+AccC <- accuracy(FCC$mean, souvenirValid)
+FCC
+```
+
+
+4. Shipments of Household Appliances: The file ApplianceShipments.xls contains the series of quarterly shipments (in millions of USD) of U.S. household appliances between 1985 and 1989. 23 The series is plotted in Figure 7.13.
+(a) If we compute the autocorrelation of the series, which lag (> 0) is most likely to have the largest coefficient (in absolute value)? 
+(b) Create an ACF plot and compare it with your answer.
+
+
+```{r load ApplianceShipments1}
+appliance <- read.csv("ApplianceShipments1.csv", header = TRUE, stringsAsFactors = FALSE)
+dim(appliance)
+appliance <- appliance %>% select(Quarter, Shipments)
+head(appliance)
+#split Quarter column
+col1Split <- strsplit(appliance$Quarter, "-")
+col1Split
+#Make quarter column into proper columns in a dataframe
+tempDF <- data.frame(matrix(unlist(col1Split), nrow = length(col1Split), byrow = TRUE), appliance$Shipments)
+tempDF
+#reorder rows by year and then by quarter
+tempDF <- tempDF[order(tempDF$X2, tempDF$X1),]
+tempDF
+#merge quarter and year back together
+m <- paste0(tempDF$X1, "-", tempDF$X2)
+head(m)
+#put a new dataframe together
+newDF <- data.frame(m, tempDF$appliance.Shipments)
+head(newDF)
+#rename columns
+names(newDF)[1] <- "Quarter"
+names(newDF)[2] <- "Shipments"
+names(newDF)
+#make this into a timeseries
+applianceShipments.ts <- ts(newDF$Shipments, start = c(1984, 1), end = c(1989,4), frequency = 4)
+plot(applianceShipments.ts)
+
+range(applianceShipments.ts)
+newDF
+
+```
+
+
+```{r}
+library(Hmisc)
+yrange <- range(applianceShipments.ts)
+yrange
+# Set up the plot
+plot(c(1, 5), yrange, type="n", xlab="Year",  ylab="Dept Store Sales (thousands)", bty="l", xaxt="n", yaxt="n",  main = "Quarterly Dept Store Sales ")
+# Add the time series canadian
+lines(applianceShipments.ts, type = "o")
+# Add the x-axis
+axis(1, at=seq(1,5,1), labels=format(seq(1,5,1)), minor.tick(nx = 4))
+# Add the y-axis
+axis(2, at=seq(3000, 5000, 200), labels=format(seq(3000, 5000, 200)), las=2)
+```
+
+
+
+
+
+```{r}
+applianceShipments.ts
+appValidLength <- 4
+appTrainLength <- length(applianceShipments.ts) - appValidLength
+#windows for analysis
+appWindowTrain <- window(applianceShipments.ts, start = c(1985, 1),end = c(1985, 1, appTrainLength))
+appWindowValid <- window(applianceShipments.ts, start = c(1985, appTrainLength + 1), end = c(1985, 1, appTrainLength + appValidLength))
+#salesExpoSeason <- tslm(applianceShipments.ts ~ trend + season, lambda = 0)
+salesExpoSeason <- tslm(appWindowTrain ~ trend + season, lambda = 0)
+#salesForecast <- forecast(salesExpoSeason, h = 4)
+summary(salesExpoSeason)
+#ggseasonplot(applianceShipments.ts)
+```
+
+**Plot with exp trend and seasonality**
+
+```{r, echo=TRUE}
+yrange <- range(appWindowTrain)
+# Set up the plot
+plot(c(1, 7), yrange, type="n", xlab="Year",  ylab="Dept Store Sales (thousands)", bty="l", xaxt="n", yaxt="n",  main = "Exponential Trend  with Seasonality Model \nfit to Dept Store Sales ")
+# Add the time series canadian training set
+lines(appWindowTrain, bty="l", type = "l")
+#add exponential fit
+lines(salesExpoSeason$fitted.values, bty = "l", col = "blue")
+#lines(salesForecast$mean, col = "blue", lty = 2)
+# Add the x-axis
+axis(1, at=seq(1,5,1), labels=format(seq(1,5,1)), minor.tick(nx = 4))
+# Add the y-axis
+axis(2, at=seq(3000, 5000, 200), labels=format(seq(3000, 5000, 200)), las=2)
+legend(1, 900, c("Dept Store Sales", "Exp Trend with Seasonality Fit"
+                   #, "Expo Forecast"
+                   ), col = c("black", "blue"), lwd = c(1,1),  bty = "n", lty = c(1,1))
+#accuracy(salesForecast, appWindowValid)
+```
+
+
+**Residual plot**
+
+```{r}
+plot(appWindowTrain - salesExpoSeason$fitted.values, type="o", bty="l", xlab = "Year", ylab = "Residuals", main = "Dept Store Sales Residuals in Training Period \nExponential Trend with Seasonality Fit")
+abline(h = 0)
+#another way to plot residuals from the multiplicative trend and seasonality model
+# plot(salesExpoSeason$residuals, type = "o")
+# abline(h = 0)
+```
+
