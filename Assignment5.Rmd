@@ -7,13 +7,13 @@ output: html_document
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(
-	echo = FALSE,
+	echo = TRUE,
 	message = FALSE,
 	warning = FALSE
 )
 ```
 
-```{r}
+```{r, message=FALSE, warning=FALSE, include=FALSE}
 library(forecast)
 library(knitr)
 library(dplyr)
@@ -25,7 +25,6 @@ library(pander)
 2. Analysis of Canadian Manufacturing Workers Work-Hours: The time series plot in Figure 6.10 describes the average annual number of weekly hours spent by Canadian manufacturing workers. The data is available in CanadianWorkHours.xls.
 
 ```{r}
-
 setwd("/Users/Chris Iyer/Documents/Assignment5Predictive/")
 canadian <- read.csv("CanadianWorkHours.csv", header = TRUE, stringsAsFactors = FALSE)
 #head(canadian)
@@ -34,18 +33,11 @@ canadian.ts <- ts(canadian$Hours.per.week, start=c(1966, 1), frequency=1)
 ```
 
 ```{r}
-#partition the data
-#rangeCA <- range(canadian.ts)
-#rangeCA
-#35 years. 
 length(canadian.ts)
 validLength <- 5
 trainLength <- length(canadian.ts) - validLength
 windowTrain <- window(canadian.ts, start = c(1966,1), end = c(1966, trainLength))
 windowValid <- window(canadian.ts, start = c(1966, trainLength + 1), end =  c(1966, trainLength + validLength))
-#verify
-#length(windowValid)
-#length(windowTrain)
 ```
 
 
@@ -94,7 +86,6 @@ lines(linearTrain$fitted.values, col = "red")
 # Add a legend
 legend(1995,37, c("Actual Data", "Linear Trend Model"), lty=c(1,1), col=c("black", "red"), bty="n")
 legend(1995,37, c("Actual", "Linear Trend"), lty=c(1,1,1,1,1), col=c("black", "red"), bty="n")
-
 ```
 
 
@@ -104,19 +95,12 @@ legend(1995,37, c("Actual", "Linear Trend"), lty=c(1,1,1,1,1), col=c("black", "r
 
 ```{r}
 # Quadratic trend - there are two ways to do this
-# 1. Like the book
 canadaQuad1 <- tslm(canadian.ts ~ trend + I(trend^2))
 summary(canadaQuad1)
-#Second method
-# 2. Another way - be sure to use raw=TRUE
-#canadaQuad2 <- tslm(canadian.ts ~ poly(trend, 2, raw=TRUE))
-#summary(canadaQuad2)
 ```
 
 
 ```{r}
-# Quadratic trend - there are two ways to do this
-# 1. Like the book
 plot(c(1966, 2000), yrange, type="n", xlab="Year",  ylab="canadian Revenue Passenger Miles (millions)", bty="l", xaxt="n", yaxt="n")
 # Add the x-axis
 axis(1, at=seq(1966,2000,1), labels=format(seq(1966,2000,1)))
@@ -183,9 +167,7 @@ StrainLength <- length(DeptSales.ts) - SvalidLength
 #windows for analysis
 sWindowTrain <- window(DeptSales.ts, end = c(1, StrainLength))
 sWindowValid <- window(DeptSales.ts, start = c(1, StrainLength + 1))
-#salesExpoSeason <- tslm(DeptSales.ts ~ trend + season, lambda = 0)
 salesExpoSeason <- tslm(sWindowTrain ~ trend + season, lambda = 0)
-#salesForecast <- forecast(salesExpoSeason, h = 4)
 summary(salesExpoSeason)
 #ggseasonplot(DeptSales.ts)
 ```
@@ -203,12 +185,7 @@ lines(salesExpoSeason$fitted.values, bty = "l", col = "blue")
 axis(1, at=seq(1,7,1), labels=format(seq(1,7,1)), minor.tick(nx = 4))
 # Add the y-axis
 axis(2, at=seq(40000, 105000, 10000), labels=format(seq(40, 105, 10)), las=2)
-legend(1, 90000, c("Dept Store Sales", "Exp Trend with Seasonality Fit"
-                   #, "Expo Forecast"
-                   ), col = c("black", "blue"), lwd = c(1,1),  bty = "n", lty = c(1,1))
-#accuracy(salesForecast, sWindowValid)
-
-
+legend(1, 90000, c("Dept Store Sales", "Exp Trend with Seasonality Fit"), col = c("black", "blue"), lwd = c(1,1),  bty = "n", lty = c(1,1))
 ```
 
 
@@ -233,25 +210,16 @@ forecastSalesExpoSeason
 
 
 ```{r}
-#Generic Plot
 #yrange <- range(sWindowTrain)
 yrange <- range(sWindowTrain)
 plot(c(1,6), yrange, type = "n", xlab = "Year", ylab = "Dept Store Sales (thousands)", bty = "l", xaxt = "n", yaxt = "n", lwd = 2, main = "Regression with Exponential Trend and Seasonality \nDept Store Sales")
-
 axis(1, at = seq(1, 6, 1), labels = format(seq(1, 6, 1)), minor.tick(nx = 4))
 axis(2, at = seq(40000, 105000, 10000), labels = format(seq(40, 105, 10)), las = 2)
-
-#lines(sWindowTrain, bty = "l", lwd = 2, type = "o")
 lines(sWindowTrain, bty = "l", lwd = 2, type = "o")
 lines(salesExpoSeason$fitted.values, col="blue", lwd=2)
-#lines(forecastSalesExpoSeason$mean, col = 2, lty = 2, lwd = 2)
-#lines(maForecasts, lwd=2, col="red", lty=2)
 legend(1, 105000, c("Dept Store Sales", "Expo"), lty = c(1,2,2), col = c("black", "blue"), lwd = c(2,2),  bty = "n")
 plot(sWindowTrain - salesExpoSeason$fitted.values, type="o", bty="l", xlab = "Year", ylab = "Residuals", main = "Dept Store Sales Residuals in Training Period \nExponential Trend with Seasonality Fit")
 abline(h = 0)
-#another way to plot residuals from the multiplicative trend and seasonality model
-# plot(salesExpoSeason$residuals, type = "o")
-# abline(h = 0)
 ```
 
 
@@ -358,7 +326,6 @@ lines(log(souvenir.ts), col = "grey48", lwd = 2, lty = 1, pch = 18, type = "o")
 axis(1, at=seq(1995,2002,1), labels=format(seq(1995,2002,1)))
 # Add the y-axis
 axis(2, at = seq(7, 11, 1), labels = format(round(exp(seq(7, 11, 1)), digits = 0), las = 2))
-range(log(souvenir.ts))
 ```
 
 
@@ -370,10 +337,6 @@ range(log(souvenir.ts))
 #Run Regression Model
 modelA <- tslm(souvenirTrain ~ trend + season)
 SumA <- summary(modelA)
-#Forecast
-FCA <- forecast(modelA, h = 2)
-#Accuracy
-AccA <- accuracy(FCA$mean, souvenirValid)
 SumA
 ```
 
@@ -388,6 +351,16 @@ lines(modelA$fitted.values, col = "blue", lwd = 2)
 axis(1, at=seq(1995,2002,1), labels=format(seq(1995,2002,1)))
 axis(2, at = seq(0, 110000, 20000), labels = format(seq(0, 110, 20)), las = 2)
 legend(1996, 100000, c("Actual Souvenir Sales", "Regression Fit Trend Seasonality"), col = c("black", "blue"), lwd = c(2,2),  bty = "n", lty = c(1,1))
+```
+
+**Training Window Model A Accuracy** 
+
+```{r}
+#Forecast
+FCA <- forecast(modelA, h = 2)
+#Accuracy
+AccA <- accuracy(modelA$fitted.values, souvenirTrain)
+pander(AccA)
 ```
 
 
@@ -435,10 +408,17 @@ lines(exp(modelB$fitted.values),  lwd = 2, col = "red")
 legend(1996, 80000, c("Actual Souvenir Sales", "Exponential Fit (T&S)"),
                       #"Raw Fit (T&S)" ), 
        col = c("black", "red", "blue"), lwd = c(3,2, 2),  bty = "n", lty = c(1,1, 1))
-FCB <- forecast(modelB, h = 2)
 
-accuracy(exp(FCB$mean), souvenirValid[1:2])
-exp(FCB$mean)
+```
+
+**Training Window Model B Accuracy** 
+
+```{r}
+pander(accuracy(exp(modelB$fitted.values), souvenirTrain))
+```
+
+
+```{r}
 
 ```
 
@@ -449,18 +429,32 @@ Multiplicative
 
 **ii. What does the estimated trend coefficient of model B mean?**
 
-trend = 0.021120 means that sales of souvenirs go up by 2.1% each month overall. 
+trend = 0.021120 means that sales of souvenirs go up by 2.1% each month on average. 
 
 **iii. Use this model to forecast the sales in February 2002.** 
 
+
+```{r log model B forecast}
+FCB <- forecast(modelB, h = 2)
+pander(exp(FCB$mean))
+
+```
+
+**Model B, log(Souvenir Sales),  Forecast Accuracy **
+
 ```{r}
+pander(accuracy(exp(FCB$mean), souvenirValid[1:2]))
+```
+
+
+```{r, include=FALSE}
 modelC <- tslm(souvenirTrain ~ trend + season, lambda = 0)
 SumC <- summary(modelC)
-summary(modelB)
+
 FCC <- forecast(modelC, h = 2)
-#accuracy(FCC$mean, souvenirValid[1:2])
-#AccC <- accuracy(FCC$mean, souvenirValid)
-FCC
+AccC <- accuracy(FCC$mean, souvenirValid)
+AccC
+pander(FCC)
 
 
 ```
@@ -468,22 +462,64 @@ FCC
 
 **(d) Compare the two regression models (A and B) in terms of forecast performance. Which model is preferable for forecasting? Mention at least two reasons based on the information in the outputs. **
 
+**Forecast Performance Model A**
+
 ```{r}
-pander(pandoc.table(AccA, caption = "Error Model A"))
-pander(SumA)
-pander(pandoc.table(AccC, caption = "Error Model C"))
-pander(SumC)
+pander(accuracy(FCA$mean, souvenirValid[1:2]))
 ```
 
-Model B, which fits the Australian Souvenir Sales data to an exponential trend with seasonality, is better than Model A  which fits the data with a linear trend with seasonality because 1) the RMSE and MAPE errors are lower and 2) the adjusted R-sq is better in Model B. 
 
+```{r, eval=FALSE, include=FALSE}
+pander(pandoc.table(AccA, caption = "Error Model A"))
+
+pander(pandoc.table(AccC, caption = "Error Model C"))
+
+```
+
+Model B's forecast, which fits the Australian Souvenir Sales data to an exponential trend with seasonality, performs better than Model As,  which fits the data with a linear trend with seasonality,  because both the forecast RMSE and MAPE errors are lower. The adjusted R-sq can be used as a measurement of how well the series fits the model. This is a parameter we may use when deciding which forecast model might work best. is better in Model B. 
 
 **(e) How would you model this data differently if the goal was understanding the different components of sales in the souvenir shop between 1995 and 2001? Mention two differences.**
 
+If I wanted to explore the trend component of the Souvenir sales series, I would do a linear and a quadratic regression model.  The adjusted R-sq explain the variation in sales that can be explained by the linear and the quadratic trend respectively. The lines on the plot isolate the trends. 
 
-###Appendix
+```{r}
+yrange <- range(souvenirTrain)
+souvenirTrend <- tslm(souvenirTrain ~ trend)
+souvenirQuad <- tslm(souvenirTrain ~ trend + I(trend^2))
+summary(souvenirTrend)
+summary(souvenirQuad)
+plot(c(1995, 2001), yrange, type="n", xlab="Year",  ylab="Souvenir Sales", bty="l", xaxt="n", yaxt="n", main = "Trend Component in the Souvenir Sales data")
+# Add the x-axis
+axis(1, at=seq(1995,2001,1), labels=format(seq(1995,2001,1)))
+axis(2, at=seq(1500,82000,15000), labels=format(seq(1500,82000,15000)), las=2)
+lines(souvenirTrain, lwd = 2)
+lines(souvenirTrend$fitted.values, col = "red", lwd = 2)
+lines(souvenirQuad$fitted.values, col = "blue", lwd = 2)
+legend(1995, 80000, c("Souvenir Sales", "Linear Trend MAPE = 26%", "Quad Trend MAPE = 30%"), col = c("black", "red", "blue"), lwd = c(2, 2, 2), bty = "n")
+```
 
-```{r, echo=TRUE}
+
+If I wanted to understand the seasonal component, I would do a straight linear regression using seasonality as the dependent variable. The R-sq output explains the variation in souvenir sales using this seasonality model and the red line on the plot isolates the seasonal component in the data set. 
+
+```{r}
+souvenirSeason <- tslm(souvenirTrain ~ season)
+summary(souvenirSeason)
+yrange <- range(souvenirTrain)
+yrange
+plot(c(1995, 2001), yrange, type="n", xlab="Year",  ylab="Souvenir Sales", bty="l", xaxt="n", yaxt="n", main = "Seasonal Component in the Souvenir Sales Data")
+# Add the x-axis
+axis(1, at=seq(1995,2001,1), labels=format(seq(1995,2001,1)))
+axis(2, at=seq(1500,82000,15000), labels=format(seq(1500,82000,15000)), las=2)
+lines(souvenirTrain, lwd = 2)
+lines(souvenirSeason$fitted.values, col = "red", lwd = 2)
+legend(1995, 80000, c("Souvenir Sales", "Seasonality MAPE = 53 %"), col = c("black", "red"), lwd = c(2, 2), bty = "n")
+```
+
+
+
+
+
+```{r, eval=FALSE, include=FALSE}
 #this is the same thing but not exponential
 seasonTrend <- tslm(sWindowTrain ~trend + season)
 ForecastSeasonTrend <- forecast(seasonTrend, h = SvalidLength)
@@ -507,7 +543,7 @@ legend(1, 100000, c("Dept Store Sales", "Exp Trend with Seasonality Fit", "Expo 
 summary(seasonTrend)
 ```
 
-```{r}
+```{r, eval=FALSE, include=FALSE}
 #Season and Trend
 #salesSeasonTrend <- tslm(sWindowTrain ~ trend + season)
 yrange <- range(DeptSales.ts)
