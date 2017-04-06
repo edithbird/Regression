@@ -21,7 +21,7 @@ library(dplyr)
 library(pander)
 library(Hmisc)
 ```
-
+###1. Canadian Manufacturing
 
 1. Analysis of Canadian Manufacturing Workers Work-Hours: The time series plot in Figure 7.9 describes the average annual number of weekly hours spent by Canadian manufacturing workers. The data is available in CanadianWorkHours.xls.
 
@@ -36,6 +36,7 @@ head(canadian)
 canadian.ts <- ts(canadian$Hours, start=c(1966, 1), frequency=1)
 ```
 
+
 ```{r}
 #partition the data
 rangeCA <- range(canadian.ts)
@@ -46,9 +47,6 @@ validLength <- 5
 trainLength <- length(canadian.ts) - validLength
 windowTrain <- window(canadian.ts, start = c(1966,1), end = c(1966, trainLength))
 windowValid <- window(canadian.ts, start = c(1966, trainLength + 1), end =  c(1966, trainLength + validLength))
-#verify
-#length(windowValid)
-#length(windowTrain)
 ```
 
 
@@ -98,15 +96,67 @@ legend(1981,37.5, c("Actual Data", "Linear Trend Model"), lty=c(1,1), col=c("bla
 
 (a) If we computed the autocorrelation of this series, would the lag-1 autocorrelation exhibit negative, positive, or no autocorrelation? How can you see this from the plot? 
 
+
+
+
 (b) Compute the autocorrelation and produce an ACF plot. Verify your answer to the previous question.
 
+```{r}
+canadaAcf <- Acf(canadian.ts, lag.max = 36, main = "Auto Correlation \nCanadian Work Hours")
+canadaAcf
+```
 
+
+It exhibits a strong positive autocorrelation at lag-1. This is apparent from the line at lag-1 that crosses the significance threshold and goes nearly to 1. 
+
+
+###2. Wal-Mart Stock
 
 2. Forecasting Wal-Mart Stock: Figure 7.10 shows a time plot of Wal-Mart daily closing prices between February 2001 and February 2002. The data is available at finance.yahoo.com and in WalMartStock.xls. 21 The ACF plots of these daily closing prices and its lag-1 differenced series are in Figure 7.11. Table 7.4 shows the output from fitting an AR(1) model to the series of closing prices and to the series of differences. Use all the information to answer the following questions.
 
 ```{r}
 setwd("/Users/Chris Iyer/Documents/Assignment5Predictive/")
 walMart <- read.csv("WalMartStock.csv", header = TRUE, stringsAsFactors = FALSE)
+head(walMart)
+walMart.ts <- ts(walMart$Close, start = c(2001, 1), frequency = 365)
+yrange <- range(walMart.ts)
+# Set up the plot
+plot(c(1966, 2000), yrange, type="n", xlab="Year",  ylab = "Average Weekly Hours Worked", main = "Average Weekly Hours Worked in Canadian Manufacturing", bty="l", xaxt="n", yaxt="n")
+
+# Add the time series canadian
+lines(canadian.ts, bty="n", col = "black")
+
+# Add the x-axis
+axis(1, at=seq(1966,2000,1), labels=format(seq(1966,2000,1)))
+
+# Add the y-axis
+axis(2, at=seq(30,40, 1), labels=format(seq(30,40, 1)), las=2)
+legend(1986,37, c("Actual"), lty=c(1), col=c("black"), bty="n")
+```
+
+
+```{r}
+linearTrain <- tslm(canadian.ts ~ trend)
+summary(linearTrain)
+```
+
+
+
+```{r, include=FALSE}
+yrange <- range(walMart.ts)
+#plot ts and linear trend
+plot(c(2001, 2002), yrange, type="n", xlab="Year",  ylab = "Daily Closing Price",  main = "Daily Closing Price Wal Mart Stock", bty="l", xaxt="n", yaxt="n")
+# Add the x-axis
+axis(1, at=seq(2001,2002,12), labels=format(seq(2001,2002,12)))
+# Add the y-axis
+axis(2, at=seq(30,40, 1), labels=format(seq(30,40, 1)), las=2)
+# Add the time series canadian
+lines(canadian.ts, bty="l")
+lines(linearTrain$fitted.values, col = "red")
+# Add a legend
+legend(1995,37, c("Actual Data", "Linear Trend Model"), lty=c(1,1), col=c("black", "red"), bty="n")
+legend(1995,37, c("Actual", "Linear Trend"), lty=c(1,1,1,1,1), col=c("black", "red"), bty="n")
+
 ```
 
 
@@ -125,22 +175,11 @@ walMart <- read.csv("WalMartStock.csv", header = TRUE, stringsAsFactors = FALSE)
 . The series is random. 
 . The changes in the series from one period to the other are random.
 
-
+###3. Souvenir Sales
 
 3. Souvenir Sales: The file SouvenirSales.xls contains monthly sales for a souvenir shop at a beach resort town in Queensland, Australia, between 1995 and 2001. 
 
 Back in 2001, the store wanted to use the data to forecast sales for the next 12 months (year 2002). They hired an analyst to generate forecasts. The analyst first partitioned the data into training and validation periods, with the validation set containing the last 12 months of data (year 2001). She then fit a regression model to sales, using the training period.
-
-
-(a)	Run a regression model with log(Sales) as the output variable and with a linear trend and monthly predictors. Remember to fit only the training period. Use this model to forecast the sales in February 2002. 
-
-(b) Create an ACF plot until lag-15 for the forecast errors. Now fit an AR model with lag-2 [ARIMA(2, 0, 0)] to the forecast errors. 
-
-i.	Examining the ACF plot and the estimated coefficients of the AR(2) model (and their statistical significance), what can we learn about the regression forecasts? 
-
-ii.	Use the autocorrelation information to compute a forecast for January 2002, using the regression model and the AR(2) model above. *Please note, that for  #3b, part ii, please forecast for January 2001 (instead of 2002). I think the book is very unclear and inconsistent for this question. By asking for 2002, I think they wanted you to rejoin the partitions, re-estimate, etc. But they never say that.  So, instead, please forecast for January 2001, the first month of the validation period.
-
-
 
 
 ```{r}
@@ -154,6 +193,29 @@ souvenirTrain <- window(souvenir.ts, end=c(1995, trainLength))
 souvenirValid <- window(souvenir.ts, start=c(1995,trainLength+1))
 
 ```
+
+
+(a)	Run a regression model with log(Sales) as the output variable and with a linear trend and monthly predictors. Remember to fit only the training period. Use this model to forecast the sales in February 2002. 
+
+**Log Regression trend and seasonality**
+
+```{r}
+modelC <- tslm(souvenirTrain ~ trend + season, lambda = 0)
+SumC <- summary(modelC)
+FCC <- forecast(modelC, h = 2)
+accuracy(FCC$mean, souvenirValid[1:2])
+AccC <- accuracy(FCC$mean, souvenirValid)
+FCC
+```
+
+(b) Create an ACF plot until lag-15 for the forecast errors. Now fit an AR model with lag-2 [ARIMA(2, 0, 0)] to the forecast errors. 
+
+i.	Examining the ACF plot and the estimated coefficients of the AR(2) model (and their statistical significance), what can we learn about the regression forecasts? 
+
+ii.	Use the autocorrelation information to compute a forecast for January 2002, using the regression model and the AR(2) model above. *Please note, that for  #3b, part ii, please forecast for January 2001 (instead of 2002). I think the book is very unclear and inconsistent for this question. By asking for 2002, I think they wanted you to rejoin the partitions, re-estimate, etc. But they never say that.  So, instead, please forecast for January 2001, the first month of the validation period.
+
+
+
 
 
 **Souvenir Plot**
@@ -180,17 +242,8 @@ axis(2, at = seq(7, 11, 1), labels = format(round(exp(seq(7, 11, 1)), digits = 0
 range(log(souvenir.ts))
 ```
 
-**Log Regression trend and seasonality**
 
-```{r}
-modelC <- tslm(souvenirTrain ~ trend + season, lambda = 0)
-SumC <- summary(modelC)
-FCC <- forecast(modelC, h = 2)
-accuracy(FCC$mean, souvenirValid[1:2])
-AccC <- accuracy(FCC$mean, souvenirValid)
-FCC
-```
-
+###4. Shipments of Household Appliances
 
 4. Shipments of Household Appliances: The file ApplianceShipments.xls contains the series of quarterly shipments (in millions of USD) of U.S. household appliances between 1985 and 1989. 23 The series is plotted in Figure 7.13.
 (a) If we compute the autocorrelation of the series, which lag (> 0) is most likely to have the largest coefficient (in absolute value)? 
@@ -233,29 +286,29 @@ newDF
 
 ```{r}
 library(Hmisc)
+plot(applianceShipments.ts)
 yrange <- range(applianceShipments.ts)
 yrange
 # Set up the plot
-plot(c(1, 5), yrange, type="n", xlab="Year",  ylab="Dept Store Sales (thousands)", bty="l", xaxt="n", yaxt="n",  main = "Quarterly Dept Store Sales ")
+plot(c(1985, 1989), yrange, type="n", xlab="Year",  ylab="Appliance Shipments", bty="l", xaxt="n", yaxt="n",  main = "Quarterly Dept Store Sales ")
 # Add the time series canadian
 lines(applianceShipments.ts, type = "o")
 # Add the x-axis
 axis(1, at=seq(1,5,1), labels=format(seq(1,5,1)), minor.tick(nx = 4))
 # Add the y-axis
 axis(2, at=seq(3000, 5000, 200), labels=format(seq(3000, 5000, 200)), las=2)
+lines(applianceShipments.ts, col = "blue", type = "o")
 ```
-
-
-
 
 
 ```{r}
 applianceShipments.ts
+time <- time(applianceShipments.ts)
 appValidLength <- 4
 appTrainLength <- length(applianceShipments.ts) - appValidLength
 #windows for analysis
-appWindowTrain <- window(applianceShipments.ts, start = c(1985, 1),end = c(1985, 1, appTrainLength))
-appWindowValid <- window(applianceShipments.ts, start = c(1985, appTrainLength + 1), end = c(1985, 1, appTrainLength + appValidLength))
+appWindowTrain <- window(applianceShipments.ts, start = time[1],end = time[appTrainLength])
+appWindowValid <- window(applianceShipments.ts, start = time[appTrainLength + 1], end = time[appTrainLength + appValidLength])
 #salesExpoSeason <- tslm(applianceShipments.ts ~ trend + season, lambda = 0)
 salesExpoSeason <- tslm(appWindowTrain ~ trend + season, lambda = 0)
 #salesForecast <- forecast(salesExpoSeason, h = 4)
@@ -268,14 +321,14 @@ summary(salesExpoSeason)
 ```{r, echo=TRUE}
 yrange <- range(appWindowTrain)
 # Set up the plot
-plot(c(1, 7), yrange, type="n", xlab="Year",  ylab="Dept Store Sales (thousands)", bty="l", xaxt="n", yaxt="n",  main = "Exponential Trend  with Seasonality Model \nfit to Dept Store Sales ")
+plot(c(1985, 1989), yrange, type="n", xlab="Year",  ylab="Dept Store Sales (thousands)", bty="l", xaxt="n", yaxt="n",  main = "Exponential Trend  with Seasonality Model \nfit to Dept Store Sales ")
 # Add the time series canadian training set
 lines(appWindowTrain, bty="l", type = "l")
 #add exponential fit
 lines(salesExpoSeason$fitted.values, bty = "l", col = "blue")
 #lines(salesForecast$mean, col = "blue", lty = 2)
 # Add the x-axis
-axis(1, at=seq(1,5,1), labels=format(seq(1,5,1)), minor.tick(nx = 4))
+axis(1, at=seq(1985,1989,1), labels=format(seq(1985,1989,1)), minor.tick(nx = 4))
 # Add the y-axis
 axis(2, at=seq(3000, 5000, 200), labels=format(seq(3000, 5000, 200)), las=2)
 legend(1, 900, c("Dept Store Sales", "Exp Trend with Seasonality Fit"
