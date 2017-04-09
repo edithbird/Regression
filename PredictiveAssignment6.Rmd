@@ -25,7 +25,7 @@ library(Hmisc)
 
 1. Analysis of Canadian Manufacturing Workers Work-Hours: The time series plot in Figure 7.9 describes the average annual number of weekly hours spent by Canadian manufacturing workers. The data is available in CanadianWorkHours.xls.
 
-```{r}
+```{r, include=FALSE}
 setwd("/Users/Chris Iyer/Documents/Assignment5Predictive/")
 canadian <- read.csv("CanadianWorkHours.csv", header = TRUE, stringsAsFactors = FALSE)
 #head(canadian)
@@ -37,7 +37,7 @@ canadian.ts <- ts(canadian$Hours, start=c(1966, 1), frequency=1)
 ```
 
 
-```{r}
+```{r, include=FALSE}
 #partition the data
 rangeCA <- range(canadian.ts)
 #rangeCA
@@ -50,7 +50,7 @@ windowValid <- window(canadian.ts, start = c(1966, trainLength + 1), end =  c(19
 ```
 
 
-```{r}
+```{r, include=FALSE}
 linearTrain <- tslm(canadian.ts ~ trend)
 summary(linearTrain)
 ```
@@ -58,7 +58,7 @@ summary(linearTrain)
 
 **This shows the linear trend plotted on the generic plot**
 
-```{r, echo=TRUE}
+```{r, echo=FALSE}
 yrange <- range(canadian.ts)
 #plot ts and linear trend
 plot(c(1966, 2000), yrange, type="n", xlab="Year",  ylab = "Average Weekly Hours Worked",  main = "Average Weekly Hours Worked in Canadian Manufacturing", bty="l", xaxt="n", yaxt="n")
@@ -68,9 +68,9 @@ axis(1, at=seq(1966,2000,1), labels=format(seq(1966,2000,1)))
 axis(2, at=seq(30,40, 0.5), labels=format(seq(30,40, 0.5)), las=2)
 # Add the time series canadian
 lines(canadian.ts, bty="l")
-lines(linearTrain$fitted.values, col = "red")
+#lines(linearTrain$fitted.values, col = "red")
 # Add a legend
-legend(1981,37.5, c("Actual Data", "Linear Trend Model"), lty=c(1,1), col=c("black", "red"), bty="n")
+#legend(1981,37.5, c("Actual Data", "Linear Trend Model"), lty=c(1,1), col=c("black", "red"), bty="n")
 
 ```
 
@@ -78,14 +78,18 @@ legend(1981,37.5, c("Actual Data", "Linear Trend Model"), lty=c(1,1), col=c("bla
 
 **(a) If we computed the autocorrelation of this series, would the lag-1 autocorrelation exhibit negative, positive, or no autocorrelation? How can you see this from the plot?** 
 
+The time series plot of the averge weekly hours worked in Canadian manufacturing largely shows a downlward trend. If we computed a lag-1 autocorrelation, we would see "stickiness", consecutive values that move in same direction, be it up or down. This is a positive autocorrelation. When fitting a model to this data series, we would want to look for one that either captures trend or we would detrend the data first. 
 
-It exhibits a strong positive autocorrelation at a lag 1. This is apparent from the line at period 1 on the x axis that crosses the significance threshold and goes nearly to 1 on the y axis. 
+
+
 
 
 **(b) Compute the autocorrelation and produce an ACF plot. Verify your answer to the previous question.**
 
+It exhibits a strong positive autocorrelation at a lag 1. This is apparent from the line at period 1 on the x axis that crosses the significance threshold and goes nearly to 1 on the y axis. 
+
 ```{r}
-canadaAcf <- Acf(canadian.ts, lag.max = 36, main = "Auto Correlation \nCanadian Work Hours")
+canadaAcf <- Acf(canadian.ts, lag.max = 1, main = "Auto Correlation \nCanadian Work Hours")
 canadaAcf
 ```
 
@@ -94,13 +98,13 @@ canadaAcf
 
 2. Forecasting Wal-Mart Stock: Figure 7.10 shows a time plot of Wal-Mart daily closing prices between February 2001 and February 2002. The data is available at finance.yahoo.com and in WalMartStock.xls. 21 The ACF plots of these daily closing prices and its lag-1 differenced series are in Figure 7.11. Table 7.4 shows the output from fitting an AR(1) model to the series of closing prices and to the series of differences. Use all the information to answer the following questions.
 
-```{r}
+```{r, echo=FALSE}
 setwd("/Users/Chris Iyer/Documents/Assignment5Predictive/")
 walMart <- read.csv("WalMartStock1.csv", header = TRUE, stringsAsFactors = FALSE)
 walMart.ts <- ts(walMart$Close, start = c(2001, 1), frequency = 248)
 
 walMartLinearTrain <- tslm(walMart.ts ~ trend + I(trend^2))
-summary(walMartLinearTrain)
+#summary(walMartLinearTrain)
 
 yrange <- range(walMart.ts)
 # Set up the plot
@@ -108,20 +112,20 @@ plot(c(2001, 2002), yrange, type="n", xlab="Year 2001",  ylab = "Daily Closing P
 
 # Add the time series canadian
 lines(walMart.ts, bty="n", col = "black")
-lines(walMartLinearTrain$fitted.values , col = "blue")
+#lines(walMartLinearTrain$fitted.values , col = "blue")
 
 # Add the x-axis
 
 axis(1, at=seq(2001,2001+11/12,1/12), labels=c("Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec", "Jan"))
 # Add the y-axis
 axis(2, at=seq(40,65, 2), labels=format(seq(40,65, 2)), las=2)
-legend(2001,60, c("Actual", "Quad Trend"), lty=c(1, 1), col=c("black", "blue"), bty="n")
+#legend(2001,60, c("Actual", "Quad Trend"), lty=c(1, 1), col=c("black", "blue"), bty="n")
 ```
 
 
 ```{r}
-Acf(walMart.ts, main = "ACF forWalMart Series")
-Acf(diff(walMart.ts, lag=1),  main="ACF Plot for Differenced WalMart Series")
+Acf(walMart.ts, main = "ACF forWalMart Series", lag.max = 10)
+Acf(diff(walMart.ts, lag=1),  main="ACF Plot for Differenced WalMart Series", lag.max = 10)
 ```
 
 
@@ -135,19 +139,45 @@ plot(diff(walMart.ts, lag = 1), main = "Differenced WalMart")
 
 **(b) Which of the following is/are relevant for testing whether this stock is a random walk?**
 
-* The autocorrelations of the closing price series 
 
-* The AR(1) slope coefficient for the closing price series 
+* The autocorrelations of the closing price series **Relevant**
+
+* The AR(1) slope coefficient for the closing price series **Relevant**
+If the AR(1) slope coefficient $\beta_1 = 1$, the series is a random walk. 
 
 * The AR(1) constant coefficient for the closing price series 
 
-* The autocorrelations of the differenced series 
+* The autocorrelations of the differenced series **Relevant**
 
-* The AR(1) slope coefficient for the differenced series 
+* The AR(1) slope coefficient for the differenced series **Relevant**
 
 * The AR(1) constant coefficient for the differenced series 
 
 **(c) Recreate the AR(1) model output for the Close price series shown in the left of Table 7.4. Does the AR model indicate that this is a random walk? Explain how you reached your conclusion.**
+
+To test whether this series is a random walk, the $\beta_1 = 1$. We can determine this by performing an hypothesis test where the $H_0: \beta_1 = 0$ and $H_1: \beta_1\ne 1$. The p value is calculated using the coefficient and standard error output from the AR(1) model.  At $\alpha = 0.01$, the AR(1) data indicates the Walmart closing price data series is a random walk because $p>\alpha$ using both the t distribution and the normal distribution. However, at $\alpha = 0.05$, we can reject the null hypothesis and conclude there is an underlying pattern and we can ultimately use a forecasting technique beyone the naive method. 
+I've recreated the AR(1) model output. 
+
+
+```{r}
+walMartFit <- arima(walMart.ts, order = c(1,0,0))
+walMartFit
+
+```
+
+**The p-value using the t distribution**
+
+```{r}
+#Calculate the two-tailed p-value from a t-distribution, p = 0.01896261
+pander(2*pt(-abs((1 - walMartFit$coef["ar1"]) / 0.0187), df=length(walMart.ts)-1))
+```
+
+**The p-value using a normal distribution**
+
+```{r}
+#Now calculate it using the normal distribution, p = 0.01818593
+pander(2*pnorm(-abs((1 - walMartFit$coef["ar1"]) / 0.0187)))
+```
 
 **(d) What are the implications of finding that a time series is a random walk? Choose the correct statement(s) below.**
 
@@ -155,7 +185,7 @@ plot(diff(walMart.ts, lag = 1), main = "Differenced WalMart")
 
 * The series is random. 
 
-* The changes in the series from one period to the other are random.
+* The changes in the series from one period to the other are random. **This is a correct statement**
 
 ###3. Souvenir Sales
 
@@ -170,10 +200,8 @@ souvenirSales<- read.csv("SouvenirSales.csv")
 souvenir.ts <- ts(souvenirSales$Sales, start = c(1995,1), frequency = 12)
 validLength <- 12
 trainLength <- length(souvenir.ts) - validLength
-
 souvenirTrain <- window(souvenir.ts, end=c(1995, trainLength))
 souvenirValid <- window(souvenir.ts, start=c(1995,trainLength+1))
-
 ```
 
 
@@ -182,15 +210,43 @@ souvenirValid <- window(souvenir.ts, start=c(1995,trainLength+1))
 **Log Regression trend and seasonality**
 
 ```{r}
-modelC <- tslm(souvenirTrain ~ trend + season, lambda = 0)
+modelC <- tslm(formula = souvenirTrain ~ trend + season, lambda = 0)
 SumC <- summary(modelC)
-FCC <- forecast(modelC, h = 2)
-accuracy(FCC$mean, souvenirValid[1:2])
+#modelC summary
+SumC
+FCC <- forecast(modelC, h = 12)
 AccC <- accuracy(FCC$mean, souvenirValid)
+# The forecast
 FCC
+#The accuracy of the forecast
+pander(AccC)
+#An Acf
+Acf(modelC$residuals, lag.max = 24)
 ```
 
 **(b) Create an ACF plot until lag-15 for the forecast errors. Now fit an AR model with lag-2 [ARIMA(2, 0, 0)] to the forecast errors.** 
+
+```{r}
+Acf(modelC$residuals, lag.max = 15)
+ARModelSouv <- SouvenirArima <- Arima(FCC$residuals, order = c(2,0,0))
+ARModelSouv
+#Significance
+# Calculate the t statistics for each: coefficient / s.e.
+# Rough rule is anything > 2 (or < -2) is statistically significant
+#AR(1) is statistically significant 2.818482
+ARModelSouv$coef["ar1"] / 0.1090
+#AR(2) is statistically significant at 3.346186
+ARModelSouv$coef["ar2"] / 0.1102
+
+
+
+
+
+
+pander(2*pnorm(-abs((1 - SouvenirArima$coef["ar2"]) / 0.1102)), main = "ar1 using a normal distribution")
+pander(2*pnorm(-abs((1 - SouvenirArima$coef["ar1"]) / 0.1090)), main = "ar1 using a normal distribution")
+```
+
 
 **i.	Examining the ACF plot and the estimated coefficients of the AR(2) model (and their statistical significance), what can we learn about the regression forecasts?** 
 
