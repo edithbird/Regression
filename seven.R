@@ -10,6 +10,34 @@ airTrainLength <- length(air.ts) - airValidLength
 #aV <- window(air.ts, start = c(1990, airTrainLength + 1))
 airTrainWindow <- window(air.ts, start = time[1], end = time[airTrainLength])
 airValidWindow <- window(air.ts, start = time[airTrainLength + 1], end = time[airTrainLength + airValidLength])
+#Acf to view trend seasonality. Shows strong AC both components.
+Acf(air.ts)
+#AC on differenced = 1. Shows strong seasonal remaining
+Diff1 <- diff(air.ts, lag = 1)
+Acf(Diff1)
+#Differenced = 12, Acf shows significant trend
+Diff2 <- diff(air.ts, lag = 12)
+Acf(Diff2)
+#Double differenced
+Diff3 <- diff(diff(air.ts, lag = 1), lag = 12)
+Acf(Diff3)
+#arima on each
+NoDiff <- Arima(air.ts, order = c(1,0,0))
+NoDiff
+# Calculate the two-tailed p-value from a t-distribution p = 0.0007696904 
+2*pt(-abs((1 - NoDiff$coef ["ar1"]) / 0.0478), df=length(air.ts)-1)
+Diff1Arima <- Arima(Diff1, order = c(1,0,0))
+Diff1Arima
+#lag = 1 differenced. p = 1.343229e-29. p<alpha
+2*pt(-abs((1 - Diff1Arima$coef["ar1"]) / 0.0844), df=length(air.ts)-1)
+Diff2Arima <- Arima(Diff2, order = c(1,0,0))
+Diff2Arima
+#lag-12 differenced. p = 9.623052e-07. p < alpha
+2*pt(-abs((1 - Diff2Arima$coef ["ar1"]) / 0.0701), df=length(air.ts)-1)
+#Same on double differenced. p = 0.9989818. p > alpha. Accept null. No more systematic pattern. 
+Diff3Arima <- Arima(Diff3, order = c(1,0,0))
+Diff3Arima
+2*pt(-abs((1 - Diff3Arima$coef ["ar1"]) / .0916), df=length(air.ts)-1)
 #fit a model Linear Trend and Season
 airLinearSeason <- tslm(airTrainWindow ~ trend + season)
 summary(airLinearSeason)
@@ -18,15 +46,17 @@ airResidualsAcf <- Acf(airLinearSeason$residuals)
 #look at the values that are plotted
 airResidualsAcf
 #run an AR(1) model on the residuals to 
-ARModel <- Arima(airLinearSeason$residuals, order = c(1,0,0))
+ARModel <- Arima(airLinearSeason$residuals, order = c(2,0,0))
 ARModel
-#calculate the t-statistic for the ar1 coefficient
-ARModel$coef["ar1"]/0.0743
-#t-statistic = 8.220113. If >2 or <-2 it's statistically significant.
-#estimate p value based on a t distribution p = 7.076335e-07
-2*pt(-abs((1 - ARModel$coef["ar1"])/0.0743), df = (length(airTrainWindow) - 1))
-#estimate p value based on a normal distribution p = 1.615918e-07
-2*pnorm(-abs((1 - ARModel$coef["ar1"])/0.0743))
+#calculate the t-statistic for the ar1 coefficient = 6.729658
+ARModel$coef["ar1"]/0.0936
+#t statistic for ar2 = -0.3356196 . Not statistically significant
+ARModel$coef["ar2"] / 0.0976
+# ar2 is not signifi. cantIf >2 or <-2 it's statistically significant.
+#estimate p value based on a t distribution p = 7.592625e-19
+2*pt(-abs((ARModel$coef["ar2"])/0.1102), df = (length(airTrainWindow) - 1))
+#estimate p value based on a normal distribution p = 7.682249e-05
+2*pnorm(-abs((ARModel$coef["ar1"])/0.1090))
 #p is smaller than alpha, 8.220113 < 1.615918e-07, so this is not a random walk. 
 #have we accounted for the autocorrelation in the series?
 Acf(ARModel$residuals)
