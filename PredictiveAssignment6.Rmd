@@ -312,7 +312,7 @@ newDF <- data.frame(m, tempDF$appliance.Shipments)
 names(newDF)[1] <- "Quarter"
 names(newDF)[2] <- "Shipments"
 #make this into a timeseries
-applianceShipments.ts <- ts(newDF$Shipments, start = c(1984, 1), end = c(1989,4), frequency = 4)
+applianceShipments.ts <- ts(newDF$Shipments, start = c(1985, 1), end = c(1989,4), frequency = 4)
 plot(applianceShipments.ts, type = "o")
 ```
 
@@ -323,20 +323,18 @@ library(Hmisc)
 
 **(a) If we compute the autocorrelation of the series, which lag (> 0) is most likely to have the largest coefficient (in absolute value)?**
 
-4
+In the autocorrelation of the household appliance shipments data, the lag that would have the largest coefficient is the lag-4. This is because the data is quarterly and it does appear to have a seasonal component. 
 
 **(b) Create an ACF plot and compare it with your answer.**
 
 ```{r}
-Acf(applianceShipments.ts, lag.max = 4)
-Acf(diff(applianceShipments.ts, lag = 1))
+Acf(applianceShipments.ts, main = "Quarterly Appliance Shipments \nAcf Plot")
+Acf(diff(applianceShipments.ts, lag = 4), main = "Lag-4 Differenced Data Series \nAcf Plot of Quarterly Appliance Shipments")
 ```
 
+In the first Acf plot above, the lag-4 has the highest coefficient. In the second plot, where the original series has been deseasonalized with differencing using a lag-4, the higher value coefficient at lag-4 is no longer present. 
 
-
-
-
-```{r}
+```{r, eval=FALSE, include=FALSE}
 time <- time(applianceShipments.ts)
 appValidLength <- 4
 appTrainLength <- length(applianceShipments.ts) - appValidLength
@@ -344,15 +342,25 @@ appTrainLength <- length(applianceShipments.ts) - appValidLength
 appWindowTrain <- window(applianceShipments.ts, start = time[1],end = time[appTrainLength])
 appWindowValid <- window(applianceShipments.ts, start = time[appTrainLength + 1], end = time[appTrainLength + appValidLength])
 #applExpoSeason <- tslm(applianceShipments.ts ~ trend + season, lambda = 0)
-applExpoSeason <- tslm(appWindowTrain ~ trend + season, lambda = 0)
+applExpoSeason <- tslm(appWindowTrain ~ trend + season)
 #salesForecast <- forecast(applExpoSeason, h = 4)
 summary(applExpoSeason)
+forecastAppliance <- forecast(appWindowTrain, h = appValidLength)
+forecastAppliance$mean
 #ggseasonplot(applianceShipments.ts)
 ```
 
-**Plot with exp trend and seasonality**
 
-```{r, echo=TRUE}
+
+```{r, eval=FALSE, include=FALSE}
+#test if random walk, statistically significant p = 0.001328536 
+applianceArima <- Arima(applianceShipments.ts, order = c(1,0,0))
+applianceArima
+2*pnorm(-abs((1- applianceArima$coef["ar1"])/0.2230))
+```
+
+
+```{r, eval=FALSE, include=FALSE}
 yrange <- range(appWindowTrain)
 # Set up the plot
 plot(c(1985, 1989), yrange, type="n", xlab="Year",  ylab="Appliance Sales", bty="l", xaxt="n", yaxt="n",  main = "Exponential Trend  with Seasonality Model \nfit to Appliance Store Sales ")
@@ -372,10 +380,9 @@ legend(1, 900, c("Appliance Store Sales", "Exp Trend with Seasonality Fit"
 ```
 
 
-**Residual plot**
 
 
-```{r}
+```{r, eval=FALSE, include=FALSE}
 plot(appWindowTrain - applExpoSeason$fitted.values, type="o", bty="l", xlab = "Year", ylab = "Residuals", main = "Appliance Sales Residuals in Training Period \nExponential Trend with Seasonality Fit")
 abline(h = 0)
 ```
@@ -383,20 +390,7 @@ abline(h = 0)
 
 
 
-###Extras
-```{r}
 
-```{r}
-salesLinearLog <- tslm(souvenirTrain ~ trend + season, lambda = 0)
-summaryLinearLog <- summary(salesLinearLog)
-#modelC summary
-summaryLinearLog
-forecastLinearLog <- forecast(salesLinearLog, h = validLength)
-#AccC <- accuracy(FCC$mean, souvenirValid)
-# The forecast
-forecastLinearLog
-#The accuracy of the forecast
-#pander(AccC)
-```
-```
+
+
 
