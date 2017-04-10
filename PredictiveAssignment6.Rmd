@@ -73,19 +73,25 @@ lines(canadian.ts, bty="l")
 
 **(a) If we computed the autocorrelation of this series, would the lag-1 autocorrelation exhibit negative, positive, or no autocorrelation? How can you see this from the plot?** 
 
-The time series plot of the averge weekly hours worked in Canadian manufacturing largely shows a downlward trend. If we computed a lag-1 autocorrelation, we would see "stickiness", consecutive values that move in same direction, be it up or down. This is a positive autocorrelation. When fitting a model to this data series, we would want to look for one that either captures trend or we would detrend the data first. 
+The time series plot of the averge weekly hours worked in Canadian manufacturing largely shows a downward trend. If we computed a lag-1 autocorrelation, we would see "stickiness", consecutive values that move in same direction, be it up or down. This is a positive autocorrelation. When fitting a model to this data series, we would want to look for one that either captures trend or we would detrend the data first. 
 
 
 
 **(b) Compute the autocorrelation and produce an ACF plot. Verify your answer to the previous question.**
 
-It exhibits a strong positive autocorrelation at a lag 1. This is apparent from the line at period 1 on the x axis that crosses the significance threshold and goes nearly to 1 on the y axis. 
+The Acf plot exhibits a strong positive autocorrelation at a lag 1. This is apparent from the line at period 1 on the x axis that crosses the significance threshold and goes nearly to 1 on the y axis. The next 6 lag periods show significance as well and are probably attributed to the trend described in 1a. Detrending the data series with lag-1 differencing will likely get rid of the remaining autocorrelation. 
 
 ```{r}
-canadaAcf <- Acf(canadian.ts, lag.max = 1, main = "Auto Correlation \nCanadian Work Hours")
+canadaAcf <- Acf(canadian.ts,  main = "Auto Correlation \nCanadian Work Hours")
 canadaAcf
 ```
 
+To verify that the Acf of the Canadian work hours data series would no longer exhibit stickiness once detrended with lag-1 differncing, see the plot and table below. 
+
+```{r}
+DiffAcf <- diff(canadian.ts, lag = 1)
+canadaAcfDiff <- Acf(DiffAcf, main = "Acf Plot of Detrended Series \nwith lag-1 Differencing")
+```
 
 ###2. Wal-Mart Stock
 
