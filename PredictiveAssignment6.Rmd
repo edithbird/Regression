@@ -28,7 +28,6 @@ library(Hmisc)
 ```{r, include=FALSE}
 setwd("/Users/Chris Iyer/Documents/Assignment5Predictive/")
 canadian <- read.csv("CanadianWorkHours.csv", header = TRUE, stringsAsFactors = FALSE)
-#head(canadian)
 names(canadian)
 names(canadian)[2] <- "Hours"
 head(canadian)
@@ -68,10 +67,6 @@ axis(1, at=seq(1966,2000,1), labels=format(seq(1966,2000,1)))
 axis(2, at=seq(30,40, 0.5), labels=format(seq(30,40, 0.5)), las=2)
 # Add the time series canadian
 lines(canadian.ts, bty="l")
-#lines(linearTrain$fitted.values, col = "red")
-# Add a legend
-#legend(1981,37.5, c("Actual Data", "Linear Trend Model"), lty=c(1,1), col=c("black", "red"), bty="n")
-
 ```
 
 
@@ -79,8 +74,6 @@ lines(canadian.ts, bty="l")
 **(a) If we computed the autocorrelation of this series, would the lag-1 autocorrelation exhibit negative, positive, or no autocorrelation? How can you see this from the plot?** 
 
 The time series plot of the averge weekly hours worked in Canadian manufacturing largely shows a downlward trend. If we computed a lag-1 autocorrelation, we would see "stickiness", consecutive values that move in same direction, be it up or down. This is a positive autocorrelation. When fitting a model to this data series, we would want to look for one that either captures trend or we would detrend the data first. 
-
-
 
 
 
@@ -156,6 +149,7 @@ If the AR(1) slope coefficient $\beta_1 = 1$, the series is a random walk.
 **(c) Recreate the AR(1) model output for the Close price series shown in the left of Table 7.4. Does the AR model indicate that this is a random walk? Explain how you reached your conclusion.**
 
 To test whether this series is a random walk, the $\beta_1 = 1$. We can determine this by performing an hypothesis test where the $H_0: \beta_1 = 0$ and $H_1: \beta_1\ne 1$. The p value is calculated using the coefficient and standard error output from the AR(1) model.  At $\alpha = 0.01$, the AR(1) data indicates the Walmart closing price data series is a random walk because $p>\alpha$ using both the t distribution and the normal distribution. However, at $\alpha = 0.05$, we can reject the null hypothesis and conclude there is an underlying pattern and we can ultimately use a forecasting technique beyone the naive method. 
+
 I've recreated the AR(1) model output. 
 
 
@@ -194,7 +188,7 @@ pander(2*pnorm(-abs((1 - walMartFit$coef["ar1"]) / 0.0187)))
 **Back in 2001, the store wanted to use the data to forecast sales for the next 12 months (year 2002). They hired an analyst to generate forecasts. The analyst first partitioned the data into training and validation periods, with the validation set containing the last 12 months of data (year 2001). She then fit a regression model to sales, using the training period.**
 
 
-```{r}
+```{r, echo=FALSE}
 setwd("/Users/Chris Iyer/Documents/Assignment5Predictive/")
 souvenirSales<- read.csv("SouvenirSales.csv")
 souvenir.ts <- ts(souvenirSales$Sales, start = c(1995,1), frequency = 12)
@@ -204,79 +198,96 @@ souvenirTrain <- window(souvenir.ts, end=c(1995, trainLength))
 souvenirValid <- window(souvenir.ts, start=c(1995,trainLength+1))
 ```
 
+**Log(souvenir) plot**
+
+```{r}
+plot(log(souvenir.ts), type = "n", xaxt = "n", yaxt = "n", xlab = "Year", ylab = "Souvenir Sales (thousands)", main = "Log Souvenir Sales")
+lines(log(souvenir.ts), col = "grey48", lwd = 2, lty = 1, pch = 18, type = "o")
+# Add the x-axis
+axis(1, at=seq(1995,2002,1), labels=format(seq(1995,2002,1)))
+# Add the y-axis
+axis(2, at = seq(7, 11, 1), labels = format(round(exp(seq(7, 11, 1)), digits = 0), las = 2))
+```
 
 **(a)	Run a regression model with log(Sales) as the output variable and with a linear trend and monthly predictors. Remember to fit only the training period. Use this model to forecast the sales in February 2002.** 
 
 **Log Regression trend and seasonality**
 
 ```{r}
-modelC <- tslm(formula = souvenirTrain ~ trend + season, lambda = 0)
-SumC <- summary(modelC)
-#modelC summary
-SumC
-FCC <- forecast(modelC, h = 12)
-AccC <- accuracy(FCC$mean, souvenirValid)
-# The forecast
-FCC
-#The accuracy of the forecast
-pander(AccC)
-#An Acf
-Acf(modelC$residuals, lag.max = 24)
+LogFC <- tslm(log(souvenirTrain) ~ trend + season)
+pander(summary(LogFC))
+```
+ 
+**Forecast using a regression model with log(Sales) as the output variable and with a linear trend and monthly predictors**  
+
+```{r}
+FCFC <- forecast(LogFC, h = validLength)
 ```
 
 **(b) Create an ACF plot until lag-15 for the forecast errors. Now fit an AR model with lag-2 [ARIMA(2, 0, 0)] to the forecast errors.** 
 
 ```{r}
-Acf(modelC$residuals, lag.max = 15)
-ARModelSouv <- SouvenirArima <- Arima(FCC$residuals, order = c(2,0,0))
-ARModelSouv
-#Significance
+Acf(FCFC$residuals, lag.max = 15, main = "ACF plot of Forecast Errors \nLag = 15")
+Arima2 <- Arima(LogFC$residuals, order = c(2,0,0))
+Arima2
+```
+
+Running an AR(2) model shows there might be some trend which can be further modeled. To determine this we need to see if these AR(2) findings are statistically significant.
+
+**Tests for significance**
+
+```{r}
 # Calculate the t statistics for each: coefficient / s.e.
 # Rough rule is anything > 2 (or < -2) is statistically significant
 #AR(1) is statistically significant 2.818482
-ARModelSouv$coef["ar1"] / 0.1090
+Arima2$coef["ar1"] / 0.1090
 #AR(2) is statistically significant at 3.346186
-ARModelSouv$coef["ar2"] / 0.1102
-
-
-
-
-
-
-pander(2*pnorm(-abs((1 - SouvenirArima$coef["ar2"]) / 0.1102)), main = "ar1 using a normal distribution")
-pander(2*pnorm(-abs((1 - SouvenirArima$coef["ar1"]) / 0.1090)), main = "ar1 using a normal distribution")
+Arima2$coef["ar2"] / 0.1102
+#both t statistics are statistically significant, so there is trend remaining which might be worth correcting the forecast for.
+#estimate the p values ar1 p value < alpha, 0.004825136
+pander(2*pnorm(-abs(Arima2$coef["ar1"]/0.1090)))
+#p = 0.0008193151, p<alpha, 
+pander(2*pnorm(-abs(Arima2$coef["ar2"]/0.1102)))
 ```
 
+**The Acf of the AR(2)residuals**
+
+```{r}
+Acf(Arima2$residuals, main = "Acf of AR(2) Residuals")
+```
 
 **i.	Examining the ACF plot and the estimated coefficients of the AR(2) model (and their statistical significance), what can we learn about the regression forecasts?** 
 
+Looking at the ACF plot and the estimated coefficients for the forecast errors, we see some trend that was missed in the forecast. Specifically at lags 1 and 2. This is reinforeced with the AR(2) model of the residuals; further modeling may take care of the remaining trend. We can perform hypothesis testing using the coefficients and standard errors to calculate t statistics. Above, I calculate the t-statistics for the ar1 and ar2. Both are statistically significant a because they are greater than 2. I further calculate the p values using the coefficients and standard errors. Using a normal distribution, both p values of ar1 and ar2 are smaller than an $\alpha = 0.01$. With a statistically significant AR2 model, we see there is some trend that can be further modeled to improve the Souvenir Sales forecast. The Acf of the AR(2) model shows that the remaining trend in the residuals can be modeled with the Arima method.  
+
+
 **ii.	Use the autocorrelation information to compute a forecast for January 2002, using the regression model and the AR(2) model above.**
 
-* Please note, that for  #3b, part ii, please forecast for January 2001 (instead of 2002). I think the book is very unclear and inconsistent for this question. By asking for 2002, I think they wanted you to rejoin the partitions, re-estimate, etc. But they never say that.  So, instead, please forecast for January 2001, the first month of the validation period.
 
-
-**Souvenir Plot**
 
 ```{r}
-plot(souvenir.ts, type = "n", xaxt = "n", yaxt = "n", xlab = "Year", ylab = "Sales (thousands)", main = "Souvenir Sales")
-lines(souvenir.ts, col = "grey48", lwd = 2, lty = 1, pch = 18, type = "o")
-# Add the x-axis
-axis(1, at=seq(1995,2002,1), labels=format(seq(1995,2002,1)))
-axis(2, at = seq(0, 110000, 20000), labels = format(seq(0, 110, 20)), las = 2)
+FCArima <- forecast(Arima2, h = validLength)
+ErrorError <- exp(FCFC$mean + FCArima$mean)
+ErrorError[1]
 ```
 
-**Log(souvenir) plot**
+**Plot the actual souvenir sales, the original forecast using a regression model with trend and seasonality using a log(souvenir sales)**
+
 
 ```{r}
+plot(souvenirValid, bty = "l", xaxt = "n", yaxt = "n", xlab = "2001", ylab = "Souvenir Sales (thousands)", main = "Actual Sales vs Forecasted Sales \nSouvenir Sales", ylim = c(9000, 110000), lwd = 2)
+axis(1, at=seq(2001,2001+11/12,1/12), labels= c("Jan ", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"))
+axis(2, at = seq(0, 110000, 20000), labels = format(seq(0, 110, 20)), las = 2)
+lines(exp(FCFC$mean), col = "blue", lwd = 2)
+lines(ErrorError, col = "green", lwd = 2, lty = 2)
+legend(2001, 90000, c("Actual Sales", "Forecasted Sales MAPE = 15.52", "Adjusted Forecasted Sales MAPE = 15.35"), lty = c(1,1,2), lwd = c(2,2,2), bty = "n", col = c("black", "blue", "green"))
+```
 
-plot(log(souvenir.ts), type = "n", xaxt = "n", yaxt = "n", xlab = "Year", ylab = "Souvenir Sales (thousands)", main = "Log Souvenir Sales")
+**The predictive accuracy between the adjusted forecast and the original forecast shows a minor difference**
 
-lines(log(souvenir.ts), col = "grey48", lwd = 2, lty = 1, pch = 18, type = "o")
-# Add the x-axis
-axis(1, at=seq(1995,2002,1), labels=format(seq(1995,2002,1)))
-# Add the y-axis
-axis(2, at = seq(7, 11, 1), labels = format(round(exp(seq(7, 11, 1)), digits = 0), las = 2))
-range(log(souvenir.ts))
+```{r}
+accuracy(ErrorError, souvenirValid)
+accuracy(exp(FCFC$mean), souvenirValid)
 ```
 
 
@@ -367,5 +378,25 @@ legend(1, 900, c("Appliance Store Sales", "Exp Trend with Seasonality Fit"
 ```{r}
 plot(appWindowTrain - applExpoSeason$fitted.values, type="o", bty="l", xlab = "Year", ylab = "Residuals", main = "Appliance Sales Residuals in Training Period \nExponential Trend with Seasonality Fit")
 abline(h = 0)
+```
+
+
+
+
+###Extras
+```{r}
+
+```{r}
+salesLinearLog <- tslm(souvenirTrain ~ trend + season, lambda = 0)
+summaryLinearLog <- summary(salesLinearLog)
+#modelC summary
+summaryLinearLog
+forecastLinearLog <- forecast(salesLinearLog, h = validLength)
+#AccC <- accuracy(FCC$mean, souvenirValid)
+# The forecast
+forecastLinearLog
+#The accuracy of the forecast
+#pander(AccC)
+```
 ```
 
