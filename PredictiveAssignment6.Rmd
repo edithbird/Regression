@@ -91,6 +91,7 @@ To verify that the Acf of the Canadian work hours data series would no longer ex
 ```{r}
 DiffAcf <- diff(canadian.ts, lag = 1)
 canadaAcfDiff <- Acf(DiffAcf, main = "Acf Plot of Detrended Series \nwith lag-1 Differencing")
+canadaAcfDiff
 ```
 
 ###2. Wal-Mart Stock
@@ -144,13 +145,13 @@ plot(diff(walMart.ts, lag = 1), main = "Differenced WalMart")
 * The AR(1) slope coefficient for the closing price series **Relevant**
 If the AR(1) slope coefficient $\beta_1 = 1$, the series is a random walk. 
 
-* The AR(1) constant coefficient for the closing price series 
+* The AR(1) constant coefficient for the closing price series **Not Relevant**
 
 * The autocorrelations of the differenced series **Relevant**
 
-* The AR(1) slope coefficient for the differenced series **Relevant**
+* The AR(1) slope coefficient for the differenced series **Not Relevant**
 
-* The AR(1) constant coefficient for the differenced series 
+* The AR(1) constant coefficient for the differenced series **Relevant**
 
 **(c) Recreate the AR(1) model output for the Close price series shown in the left of Table 7.4. Does the AR model indicate that this is a random walk? Explain how you reached your conclusion.**
 
@@ -181,9 +182,9 @@ pander(2*pnorm(-abs((1 - walMartFit$coef["ar1"]) / 0.0187)))
 
 **(d) What are the implications of finding that a time series is a random walk? Choose the correct statement(s) below.**
 
-* It is impossible to obtain useful forecasts of the series.
+* It is impossible to obtain useful forecasts of the series. **True, can only model with naive forecasting**
 
-* The series is random. 
+* The series is random. **Not correct**
 
 * The changes in the series from one period to the other are random. **This is a correct statement**
 
